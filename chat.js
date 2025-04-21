@@ -1,13 +1,15 @@
+const TOKEN = "";
+
 const css = `
 		#chatContainer {
 			font-size: 10px;
+			line-height: 1.2;
 			position: fixed;
-			top: 50px;
-			right: 50px;
+			bottom: 100px;
+			right: 100px;
 			width: fit-content;
 			height: fit-content;
-			background: rgba(0, 0, 0, 0.04);
-			border: 1px solid rgba(0, 0, 0, 0.1);
+			background: rgba(0, 0, 0, 0.03);
 			color: rgba(27, 27, 27, 0.349);
 			border-radius: 8px;
 			z-index: 9999;
@@ -23,10 +25,10 @@ const css = `
 				display: flex;
 				align-items: center;
 				justify-content: right;
-				background: rgba(0, 0, 0, 0.06);
+				background: rgba(0, 0, 0, 0.04);
 
 				#chatSend {
-					background: rgba(0, 0, 0, 0.10);
+					background: rgba(0, 0, 0, 0.06);
 					border: none;
 					width: 10px;
 					height: 10px;
@@ -44,7 +46,7 @@ const css = `
 				padding: 5px;
 				box-sizing: border-box;
 				background: transparent;
-				color: rgba(0, 0, 0, 0.8);
+				color: rgba(0, 0, 0, 0.6);
 
 				&:focus {
 					outline: none;
@@ -55,6 +57,7 @@ const css = `
 const style = document.createElement('style');
 style.textContent = css;
 document.head.appendChild(style);
+
 
 const js = `
 		// Create chat container
@@ -109,14 +112,38 @@ const js = `
 			}
 		});
 
-		chatSend.addEventListener("click", () => {
+		chatSend.addEventListener("click", async () => {
 			const lastPromptIndex = chatTextarea.value.lastIndexOf(">> ") + 3;
 			const userMessage = chatTextarea.value.slice(lastPromptIndex).trim();
 			if (userMessage !== "") {
-				chatTextarea.value += "\\n==========\\n" + userMessage + "\\n>> ";
+				chatTextarea.value += "\\nThinking...\\n";
+
+				try {
+					const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							Authorization: "Bearer ${TOKEN}",
+						},
+						body: JSON.stringify({
+							model: "deepseek/deepseek-chat-v3-0324:free",
+							messages: [
+								{
+									role: "user",
+									content: userMessage,
+								},
+							],
+						}),
+					});
+					const data = await response.json();
+					const aiResponse = data.choices[0].message.content;
+					chatTextarea.value += aiResponse + "\\n>> ";
+				} catch (error) {
+					chatTextarea.value += "Error: Unable to fetch response.\\n>> ";
+				}
 			}
 		});
 `;
-const script = document.createElement('script');
-script.textContent = js;
-document.body.appendChild(script);
+const chatScript = document.createElement('script');
+chatScript.textContent = js;
+document.body.appendChild(chatScript);
